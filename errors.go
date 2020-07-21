@@ -1,4 +1,4 @@
-package bd_sotck_exchange
+package bdstockexchange
 
 import "errors"
 
