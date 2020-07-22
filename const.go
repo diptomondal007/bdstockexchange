@@ -7,33 +7,33 @@ type sortBy uint8
 type sortOrder uint8
 
 const (
-	// ASC ...
+	// ASC constant to sort result array in ascending order
 	ASC sortOrder = iota
-	// DESC ...
+	// DESC constant to sort result array in descending order
 	DESC
 )
 
 const (
-	// SortByTradingCode ...
+	// SortByTradingCode to sort the result by Company's Trade code
 	SortByTradingCode sortBy = iota
-	// SortByLTP ...
+	// SortByLTP to sort the result by the Last Trade Price
 	SortByLTP
-	// SortByOpeningPrice ...
+	// SortByOpeningPrice to sort the result by the Opening Price of that day
 	SortByOpeningPrice
-	// SortByHighPrice ...
+	// SortByHighPrice to sort the result by the Highest Price of the day
 	SortByHighPrice
-	// SortByLowPrice ...
+	// SortByLowPrice to sort the result by Lowest price of the day
 	SortByLowPrice
-	// SortByYCP ...
+	// SortByYCP to sort the result by Yesterday's Closing Price
 	SortByYCP
-	// SortByNumberOfTrades ...
+	// SortByNumberOfTrades to sort the result by The Number of shares are traded on that day
 	SortByNumberOfTrades
-	// SortByValue ...
+	// SortByValue to sort the result by the Value of the Company. The Value is in Million BDT.
 	SortByValue
-	// SortByVolumeOfShare ...
+	// SortByVolumeOfShare to sort the result by the Number of shares of the company
 	SortByVolumeOfShare
 	// SortByPercentageChange ...
 	SortByPercentageChange
-	// SortByPriceChange ...
+	// SortByPriceChange to sort the result by the Change of Price of the Share
 	SortByPriceChange
 )

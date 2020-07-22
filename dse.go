@@ -11,7 +11,7 @@ import (
 	"github.com/PuerkitoBio/goquery"
 )
 
-// DSE ...
+// DSE is a struct to access dse related methods
 type DSE struct {
 }
 
@@ -29,12 +29,12 @@ const (
 	volumeDSE
 )
 
-// NewDSE returns a a new DSE object
+// NewDSE returns new DSE object
 func NewDSE() *DSE {
 	return new(DSE)
 }
 
-// DSEShare ...
+// DSEShare is a model for a single company's latest price data provided by the dse website
 type DSEShare struct {
 	ID          int     `json:"id"`
 	TradingCode string  `json:"trading_code"`
@@ -116,11 +116,13 @@ func getDSELatestPrices(url string) ([]*DSEShare, error) {
 	return latestShares, nil
 }
 
-// GetLatestPricesByCategory ...
+// GetLatestPricesByCategory returns the array of latest share prices of the input category or error in case of any error
+// It takes a category name, by which field the array should be sorted ex: SortByTradingCode and sort order ex: ASC
+// It will return an error for if user tries to sort with a non existing file in the DSEShare model or invalid category name or invalid sort order
 func (d *DSE) GetLatestPricesByCategory(categoryName string, by sortBy, order sortOrder) ([]*DSEShare, error) {
 	categoryNameCap := strings.ToUpper(categoryName)
 	if !isValidCategoryName(categoryNameCap) {
-		return nil, ErrInvalidGroupName
+		return nil, errInvalidGroupName
 	}
 
 	url := fmt.Sprintf("https://www.dsebd.org/latest_share_price_all_group.php?group=%s", categoryNameCap)
@@ -134,7 +136,9 @@ func (d *DSE) GetLatestPricesByCategory(categoryName string, by sortBy, order so
 	return arr, err
 }
 
-// GetLatestPrices ...
+// GetLatestPrices returns the array of latest share prices or error in case of any error
+// It takes by which field the array should be sorted ex: SortByTradingCode and sort order ex: ASC
+// It will return an error for if user tries to sort with a non existing file in the DSEShare model or invalid category name or invalid sort order
 func (d *DSE) GetLatestPrices(by sortBy, order sortOrder) ([]*DSEShare, error) {
 	arr, err := getDSELatestPrices("https://www.dsebd.org/latest_share_price_all.php")
 	if err != nil {

@@ -8,6 +8,9 @@ os:
     - osx
 dist: trusty
 sudo: false
+branches:
+  only:
+    - master
 install:
   - go get github.com/mattn/goveralls
 script:

@@ -9,7 +9,7 @@ import (
 	"github.com/antchfx/htmlquery"
 )
 
-// CSE ...
+// CSE is a struct to access cse related methods
 type CSE struct {
 }
 
@@ -26,12 +26,12 @@ const (
 	volumeCSE
 )
 
-//NewCSE ...
+//NewCSE returns new CSE object
 func NewCSE() *CSE {
 	return new(CSE)
 }
 
-// CSEShare ...
+// CSEShare is a model for a single company's latest price data provided by the cse website
 type CSEShare struct {
 	SL          int     `json:"id"`
 	TradingCode string  `json:"trading_code"`
@@ -97,7 +97,9 @@ func getCSELatestPrices() ([]*CSEShare, error) {
 	return shares, nil
 }
 
-// GetLatestPrices ...
+// GetLatestPrices returns the array of latest share prices or error in case of any error
+// It takes by which field the array should be sorted ex: SortByTradingCode and sort order ex: ASC
+// It will return an error for if user tries to sort with a non existing file in the CSEShare model or invalid category name or invalid sort order
 func (c *CSEShare) GetLatestPrices(by sortBy, order sortOrder) ([]*CSEShare, error) {
 	arr, err := getCSELatestPrices()
 	if err != nil {
