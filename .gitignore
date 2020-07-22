@@ -16,5 +16,4 @@
 *.iml
 *.xml
 cmd/main.go
-.idea/.name
-.idea/.name
+.idea/*
