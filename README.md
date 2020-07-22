@@ -198,3 +198,7 @@ func main(){
 	log.Println(arr[0].TradingCode)
 }
 ```
+
+## License
+
+bdstockexchange is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/diptomondal007/bdstockexchange/blob/master/LICENSE)
