@@ -13,6 +13,26 @@ import (
 type CSE struct {
 }
 
+//// HistoricalMarketSummary to access market summary related methods
+//type historicalMarketSummaries []*market
+//
+//type highestRecords struct {
+//
+//}
+//
+//type record struct {
+//
+//}
+//
+//type market struct {
+//
+//}
+//
+//type Summary struct {
+//	HighestRecords          highestRecords          `json:"highest_records"`
+//	HistoricalMarketSummaries historicalMarketSummaries `json:"historical_market_summary"`
+//}
+
 const (
 	slCSE = iota
 	stockCodeCSE
@@ -100,7 +120,7 @@ func getCSELatestPrices() ([]*CSEShare, error) {
 // GetLatestPrices returns the array of latest share prices or error in case of any error
 // It takes by which field the array should be sorted ex: SortByTradingCode and sort order ex: ASC
 // It will return an error for if user tries to sort with a non existing file in the CSEShare model or invalid category name or invalid sort order
-func (c *CSEShare) GetLatestPrices(by sortBy, order sortOrder) ([]*CSEShare, error) {
+func (c *CSE) GetLatestPrices(by sortBy, order sortOrder) ([]*CSEShare, error) {
 	arr, err := getCSELatestPrices()
 	if err != nil {
 		return nil, err
