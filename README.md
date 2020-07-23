@@ -160,6 +160,26 @@ type DSEShare struct {
 DSEShare is a model for a single company's latest price data provided by the dse
 website
 
+#### type Summary
+
+```go
+type Summary struct {
+	HighestRecords      []*record
+	HistoricalSummaries []*market
+}
+```
+
+Summary holds the historical market summaries array and the record trading or
+highest records data
+
+#### func (*CSE) GetMarketSummary
+
+```go
+func (c *CSE) GetMarketSummary() (*Summary, error)
+```
+GetMarketSummary returns the summary with highest records till now and the
+historical market summary data
+
 ## Example
 #### GetLatestPrices
 ```go

@@ -13,25 +13,33 @@ import (
 type CSE struct {
 }
 
-//// HistoricalMarketSummary to access market summary related methods
-//type historicalMarketSummaries []*market
-//
-//type highestRecords struct {
-//
-//}
-//
-//type record struct {
-//
-//}
-//
-//type market struct {
-//
-//}
-//
-//type Summary struct {
-//	HighestRecords          highestRecords          `json:"highest_records"`
-//	HistoricalMarketSummaries historicalMarketSummaries `json:"historical_market_summary"`
-//}
+// record holds the record data
+type record struct {
+	Title string
+	Value float64
+	Date  string
+}
+
+// market holds the market data in a specific date for historical market summary
+type market struct {
+	SL            int
+	Date          string
+	Trade         int64
+	Volume        int64
+	ValueInTK     float64
+	MarketCapInMN float64
+	CSE30         float64
+	CSCX          float64
+	CASPI         float64
+	CSE50         float64
+	CSI           float64
+}
+
+// Summary holds the historical market summaries array and the record trading or highest records data
+type Summary struct {
+	HighestRecords      []*record
+	HistoricalSummaries []*market
+}
 
 const (
 	slCSE = iota
@@ -53,16 +61,16 @@ func NewCSE() *CSE {
 
 // CSEShare is a model for a single company's latest price data provided by the cse website
 type CSEShare struct {
-	SL          int     `json:"id"`
-	TradingCode string  `json:"trading_code"`
-	LTP         float64 `json:"ltp"`
-	Open        float64 `json:"open"`
-	High        float64 `json:"high"`
-	Low         float64 `json:"low"`
-	YCP         float64 `json:"ycp"`
-	Trade       int64   `json:"trade"`
-	ValueInMN   float64 `json:"value"`
-	Volume      int64   `json:"volume"`
+	SL          int
+	TradingCode string
+	LTP         float64
+	Open        float64
+	High        float64
+	Low         float64
+	YCP         float64
+	Trade       int64
+	ValueInMN   float64
+	Volume      int64
 }
 
 func getCSELatestPrices() ([]*CSEShare, error) {
@@ -232,4 +240,83 @@ func sortCse(arr []*CSEShare, by sortBy, order sortOrder) ([]*CSEShare, error) {
 	default:
 		return nil, errors.New("sorting with the given sort by param is not possible. try another one")
 	}
+}
+
+// GetMarketSummary returns the summary with highest records till now and the historical market summary data
+func (c *CSE) GetMarketSummary() (*Summary, error) {
+	summary := &Summary{
+		HighestRecords:      nil,
+		HistoricalSummaries: nil,
+	}
+	highestRecords := make([]*record, 0)
+	historicalSummaries := make([]*market, 0)
+
+	doc, err := htmlquery.LoadURL("https://www.cse.com.bd/market/historical_market")
+	if err != nil {
+		return nil, errErrorFetchingUrl
+	}
+
+	// process to get the highest records data
+	list := htmlquery.Find(doc, `//*[@id="wrapper"]/div/div/div[1]/div/div[3]/div[1]/div/div/div`)
+
+	for _, v := range list {
+		tabsCont := htmlquery.Find(v, "div")
+		for i, v := range tabsCont {
+			if i == 0 {
+				continue
+			}
+			recordTitle := htmlquery.FindOne(v, `//*[@id="highscore_tab_1"]`)
+			recordValue := htmlquery.FindOne(v, `//*[@id="highscore_tab_2"]`)
+			recordDate := htmlquery.FindOne(v, `//*[@id="highscore_tab_3"]`)
+			r := &record{
+				Title: htmlquery.InnerText(recordTitle),
+				Value: toFloat64(htmlquery.InnerText(recordValue)),
+				Date:  htmlquery.InnerText(recordDate),
+			}
+			highestRecords = append(highestRecords, r)
+		}
+	}
+
+	// process to get the historical market summary data
+	list = htmlquery.Find(doc, `//*[@id="wrapper"]/div/div/div[1]/div/div[3]/div[2]/div/div/div`)
+
+	for _, v := range list {
+		tabsCont := htmlquery.Find(v, "div")
+		for i, v := range tabsCont {
+			if i == 0 {
+				continue
+			}
+
+			historySL := htmlquery.FindOne(v, `//*[@id="market_tab_1"]`)
+			historyDate := htmlquery.FindOne(v, `//*[@id="market_tab_2"]`)
+			historyTrade := htmlquery.FindOne(v, `//*[@id="market_tab_3"]`)
+			historyVolume := htmlquery.FindOne(v, `//*[@id="market_tab_4"]`)
+			historyValueInTK := htmlquery.FindOne(v, `//*[@id="market_tab_5"]`)
+			historyMarketCapInMN := htmlquery.FindOne(v, `//*[@id="market_tab_6"]`)
+			historyCSE30 := htmlquery.FindOne(v, `//*[@id="market_tab_7"]`)
+			historyCSCX := htmlquery.FindOne(v, `//*[@id="market_tab_8"]`)
+			historyCASPI := htmlquery.FindOne(v, `//*[@id="market_tab_9"]`)
+			historyCSE50 := htmlquery.FindOne(v, `//*[@id="market_tab_10"]`)
+			historyCSI := htmlquery.FindOne(v, `//*[@id="market_tab_11"]`)
+
+			m := &market{
+				SL:            toInt(htmlquery.InnerText(historySL)),
+				Date:          htmlquery.InnerText(historyDate),
+				Trade:         toInt64(htmlquery.InnerText(historyTrade)),
+				Volume:        toInt64(htmlquery.InnerText(historyVolume)),
+				ValueInTK:     toFloat64(htmlquery.InnerText(historyValueInTK)),
+				MarketCapInMN: toFloat64(htmlquery.InnerText(historyMarketCapInMN)),
+				CSE30:         toFloat64(htmlquery.InnerText(historyCSE30)),
+				CSCX:          toFloat64(htmlquery.InnerText(historyCSCX)),
+				CASPI:         toFloat64(htmlquery.InnerText(historyCASPI)),
+				CSE50:         toFloat64(htmlquery.InnerText(historyCSE50)),
+				CSI:           toFloat64(htmlquery.InnerText(historyCSI)),
+			}
+			historicalSummaries = append(historicalSummaries, m)
+		}
+	}
+
+	summary.HighestRecords = highestRecords
+	summary.HistoricalSummaries = historicalSummaries
+	return summary, nil
 }

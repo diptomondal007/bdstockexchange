@@ -33,6 +33,9 @@ func toFloat64(text string) float64 {
 
 // toInt64 returns the int64 cleaning the input string
 func toInt64(text string) int64 {
+	if strings.Contains(text, " "){
+		text = strings.Replace(text, " ","", -1)
+	}
 	val, err := strconv.ParseInt(normalizeAmerican(text), 10, 64)
 	if err != nil {
 		log.Println(err)
