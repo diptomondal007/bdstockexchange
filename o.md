@@ -1,20 +1,7 @@
-## bdstockexchange
-A Go library to fetch latest stock prices from Dhaka and Chittagong Stock Exchange (DSE & CSE).
+# bdstockexchange
+--
+    import "."
 
-[![Build Status](https://travis-ci.com/diptomondal007/bdstockexchange.svg?branch=master)](https://travis-ci.com/github/diptomondal007/bdstockexchange)
-[![Coverage Status](https://coveralls.io/repos/github/diptomondal007/bdstockexchange/badge.svg?branch=master)](https://coveralls.io/github/diptomondal007/bdstockexchange?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/diptomondal007/bdstockexchange)](https://goreportcard.com/report/github.com/diptomondal007/bdstockexchange)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![PkgGoDev](https://pkg.go.dev/badge/github.com/diptomondal007/bdstockexchange?tab=doc)](https://pkg.go.dev/github.com/diptomondal007/bdstockexchange?tab=doc)
-
-## Import
-```go
-import "github.com/diptomondal007/bdstockexchange"
-```
-## Install
-```
-go get -u github.com/diptomondal007/bdstockexchange
-```
 
 ## Usage
 
@@ -70,36 +57,38 @@ func NewCSE() *CSE
 ```
 NewCSE returns new CSE object
 
-#### type CSEShare
+#### func (*CSE) GetLatestPrices
 
 ```go
-type CSEShare struct {
-	SL          int     `json:"id"`
-	TradingCode string  `json:"trading_code"`
-	LTP         float64 `json:"ltp"`
-	Open        float64 `json:"open"`
-	High        float64 `json:"high"`
-	Low         float64 `json:"low"`
-	YCP         float64 `json:"ycp"`
-	Trade       int64   `json:"trade"`
-	ValueInMN   float64 `json:"value"`
-	Volume      int64   `json:"volume"`
-}
-```
-
-CSEShare is a model for a single company's latest price data provided by the cse
-website
-
-#### func (*CSEShare) GetLatestPrices
-
-```go
-func (c *CSEShare) GetLatestPrices(by sortBy, order sortOrder) ([]*CSEShare, error)
+func (c *CSE) GetLatestPrices(by sortBy, order sortOrder) ([]*CSEShare, error)
 ```
 GetLatestPrices returns the array of latest share prices or error in case of any
 error It takes by which field the array should be sorted ex: SortByTradingCode
 and sort order ex: ASC It will return an error for if user tries to sort with a
 non existing file in the CSEShare model or invalid category name or invalid sort
 order
+
+
+
+#### type CSEShare
+
+```go
+type CSEShare struct {
+	SL          int
+	TradingCode string
+	LTP         float64
+	Open        float64
+	High        float64
+	Low         float64
+	YCP         float64
+	Trade       int64
+	ValueInMN   float64
+	Volume      int64
+}
+```
+
+CSEShare is a model for a single company's latest price data provided by the cse
+website
 
 #### type DSE
 
@@ -160,67 +149,4 @@ type DSEShare struct {
 DSEShare is a model for a single company's latest price data provided by the dse
 website
 
-#### type Summary
 
-```go
-type Summary struct {
-	HighestRecords      []*record
-	HistoricalSummaries []*market
-}
-```
-
-Summary holds the historical market summaries array and the record trading or
-highest records data
-
-#### func (*CSE) GetMarketSummary
-
-```go
-func (c *CSE) GetMarketSummary() (*Summary, error)
-```
-GetMarketSummary returns the summary with highest records till now and the
-historical market summary data
-
-## Example
-#### GetLatestPrices
-```go
-package main
-
-import (
-	"github.com/diptomondal007/bdstockexchange"
-	"log"
-)
-
-func main(){
-	dse := bdstockexchange.NewDSE()
-	arr, err := dse.GetLatestPrices(bdstockexchange.SortByHighPrice, bdstockexchange.ASC)
-	if err != nil{
-		// Do something with the error
-		log.Println(err)
-	}
-	log.Println(arr[0].TradingCode)
-}
-```
-
-#### GetLatestPricesByCategory
-```go
-package main
-
-import (
-	"github.com/diptomondal007/bdstockexchange"
-	"log"
-)
-
-func main(){
-	dse := bdstockexchange.NewDSE()
-	arr, err := dse.GetLatestPricesByCategory("A" ,bdstockexchange.SortByHighPrice, bdstockexchange.ASC)
-	if err != nil{
-		// Do something with the error
-		log.Println(err)
-	}
-	log.Println(arr[0].TradingCode)
-}
-```
-
-## License
-
-bdstockexchange is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/diptomondal007/bdstockexchange/blob/master/LICENSE)
