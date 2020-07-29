@@ -70,36 +70,133 @@ func NewCSE() *CSE
 ```
 NewCSE returns new CSE object
 
-#### type CSEShare
+#### func (*CSE) GetAllListedCompanies
 
 ```go
-type CSEShare struct {
-	SL          int     `json:"id"`
-	TradingCode string  `json:"trading_code"`
-	LTP         float64 `json:"ltp"`
-	Open        float64 `json:"open"`
-	High        float64 `json:"high"`
-	Low         float64 `json:"low"`
-	YCP         float64 `json:"ycp"`
-	Trade       int64   `json:"trade"`
-	ValueInMN   float64 `json:"value"`
-	Volume      int64   `json:"volume"`
-}
+func (c *CSE) GetAllListedCompanies() ([]*Company, error)
 ```
+GetAllListedCompanies returns all the companies listed in cse or error in case
+of any error
 
-CSEShare is a model for a single company's latest price data provided by the cse
-website
-
-#### func (*CSEShare) GetLatestPrices
+#### func (*CSE) GetAllListedCompaniesByCategory
 
 ```go
-func (c *CSEShare) GetLatestPrices(by sortBy, order sortOrder) ([]*CSEShare, error)
+func (c *CSE) GetAllListedCompaniesByCategory() ([]*CompanyListingByCategory, error)
+```
+GetAllListedCompaniesByCategory returns the listing of the companies by their
+category or an error in case of any error
+
+#### func (*CSE) GetAllListedCompaniesByIndustry
+
+```go
+func (c *CSE) GetAllListedCompaniesByIndustry() ([]*CompanyListingByIndustry, error)
+```
+GetAllListedCompaniesByIndustry returns list of companies with their industry
+type or error in case of any error
+
+#### func (*CSE) GetAllWeeklyReports
+
+```go
+func (c *CSE) GetAllWeeklyReports(year int) (*WeeklyReports, error)
+```
+GetAllWeeklyReports returns weekly reports pdf link for the input Year. the Year
+should be between current Year and 2018
+
+#### func (*CSE) GetLatestPrices
+
+```go
+func (c *CSE) GetLatestPrices(by sortBy, order sortOrder) ([]*CSEShare, error)
 ```
 GetLatestPrices returns the array of latest share prices or error in case of any
 error It takes by which field the array should be sorted ex: SortByTradingCode
 and sort order ex: ASC It will return an error for if user tries to sort with a
 non existing file in the CSEShare model or invalid category name or invalid sort
 order
+
+#### func (*CSE) GetMarketStatus
+
+```go
+func (d *CSE) GetMarketStatus() (*CseMarketStatus, error)
+```
+GetMarketStatus returns the CseMarketStatus with is open/close
+
+#### func (*CSE) GetMarketSummary
+
+```go
+func (c *CSE) GetMarketSummary() (*Summary, error)
+```
+GetMarketSummary returns the summary with highest records till now and the
+historical market summary data
+
+#### func (*CSE) GetPriceEarningRatio
+
+```go
+func (c *CSE) GetPriceEarningRatio(day, month, year string) (*PriceEarningRatios, error)
+```
+GetPriceEarningRatio returns the price earning ratio data for listed companies
+as per input date. It takes day, month and Year as input ex : (03, 07, 2020)
+where 03 is the day and 07 is the month and 2020 is the Year. Don't forget to
+include 0 before single digit day or month
+
+#### type CSEShare
+
+```go
+type CSEShare struct {
+	SL          int
+	TradingCode string
+	LTP         float64
+	Open        float64
+	High        float64
+	Low         float64
+	YCP         float64
+	Trade       int64
+	ValueInMN   float64
+	Volume      int64
+}
+```
+
+CSEShare is a model for a single company's latest price data provided by the cse
+website
+
+#### type Company
+
+```go
+type Company struct {
+	CompanyName string
+	TradingCode string
+}
+```
+
+
+#### type CompanyListingByCategory
+
+```go
+type CompanyListingByCategory struct {
+	Category string
+	List     []*Company
+}
+```
+
+
+#### type CompanyListingByIndustry
+
+```go
+type CompanyListingByIndustry struct {
+	IndustryType string
+	List         []*Company
+}
+```
+
+
+#### type CseMarketStatus
+
+```go
+type CseMarketStatus struct {
+	IsOpen bool
+}
+```
+
+CseMarketStatus holds the data for if market is open/close
 
 #### type DSE
 
@@ -139,6 +236,21 @@ the array should be sorted ex: SortByTradingCode and sort order ex: ASC It will
 return an error for if user tries to sort with a non existing file in the
 DSEShare model or invalid category name or invalid sort order
 
+#### func (*DSE) GetLatestPricesSortedByPercentageChange
+
+```go
+func (d *DSE) GetLatestPricesSortedByPercentageChange() ([]*LatestPricesWithPercentage, error)
+```
+GetLatestPricesSortedByPercentageChange ...
+
+#### func (*DSE) GetMarketStatus
+
+```go
+func (d *DSE) GetMarketStatus() (*DseMarketStatus, error)
+```
+GetMarketStatus returns the DseMarketStatus with is open/close and last market
+update date time
+
 #### type DSEShare
 
 ```go
@@ -160,6 +272,76 @@ type DSEShare struct {
 DSEShare is a model for a single company's latest price data provided by the dse
 website
 
+#### type DseMarketStatus
+
+```go
+type DseMarketStatus struct {
+	IsOpen        bool
+	LastUpdatedOn struct {
+		Date string
+		Time string
+	}
+}
+```
+
+DseMarketStatus holds the data for if market is open/close and when was last
+updated
+
+#### type LatestPricesWithPercentage
+
+```go
+type LatestPricesWithPercentage struct {
+	ID               int     `json:"id"`
+	TradingCode      string  `json:"trading_code"`
+	LTP              float64 `json:"ltp"`
+	High             float64 `json:"high"`
+	Low              float64 `json:"low"`
+	CloseP           float64 `json:"close_p"`
+	YCP              float64 `json:"ycp"`
+	PercentageChange float64 `json:"percentage_change"`
+	Trade            int64   `json:"trade"`
+	ValueInMN        float64 `json:"value"`
+	Volume           int64   `json:"volume"`
+}
+```
+
+LatestPricesWithPercentage ...
+
+#### type PriceEarningRatio
+
+```go
+type PriceEarningRatio struct {
+	SL            string
+	TradingCode   string
+	FinancialYear struct {
+		From string
+		To   string
+	}
+	EPSAsPerUpdatedUnAuditedAccounts struct {
+		Quarter1 float64
+		HalfYear float64
+		Quarter3 float64
+	}
+	AnnualizedEPS                     float64
+	EPSBasedOnLastAuditedAccounts     float64
+	ClosePrice                        float64
+	PERatioBasedOnAnnualizedEPS       float64
+	PERatioBasedOnLastAuditedAccounts float64
+}
+```
+
+PriceEarningRatio holds the data for a price earning ratio in selected date
+
+#### type PriceEarningRatios
+
+```go
+type PriceEarningRatios struct {
+	Date                   string
+	PriceEarningRatioArray []*PriceEarningRatio
+}
+```
+
+
 #### type Summary
 
 ```go
@@ -172,13 +354,17 @@ type Summary struct {
 Summary holds the historical market summaries array and the record trading or
 highest records data
 
-#### func (*CSE) GetMarketSummary
+#### type WeeklyReports
 
 ```go
-func (c *CSE) GetMarketSummary() (*Summary, error)
+type WeeklyReports struct {
+	Year    int
+	Reports []*report
+}
 ```
-GetMarketSummary returns the summary with highest records till now and the
-historical market summary data
+
+WeeklyReports holds the weekly reports for a Year
+
 
 ## Example
 #### GetLatestPrices
