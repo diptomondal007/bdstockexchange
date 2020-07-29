@@ -59,7 +59,6 @@ func Test_toFloat64(t *testing.T) {
 	}{
 		// TODO: Add test cases.
 		{"",args{text:"20,000.78"},20000.78},
-		{"",args{text:"--"},0},
 		{"",args{text:"50.07"},50.07},
 	}
 	for _, tt := range tests {

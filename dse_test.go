@@ -123,6 +123,8 @@ func Test_sortDse(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
+		{"", args{make([]*DSEShare,0), SortByTradingCode, ASC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByTradingCode, DESC}, make([]*DSEShare,0), false},
 		{"", args{make([]*DSEShare,0), SortByHighPrice, ASC}, make([]*DSEShare,0), false},
 		{"", args{make([]*DSEShare,0), SortByHighPrice, DESC}, make([]*DSEShare,0), false},
 		{"", args{make([]*DSEShare,0), SortByLowPrice, ASC}, make([]*DSEShare,0), false},
@@ -131,6 +133,15 @@ func Test_sortDse(t *testing.T) {
 		{"", args{make([]*DSEShare,0), SortByLTP, DESC}, make([]*DSEShare,0), false},
 		{"", args{make([]*DSEShare,0), SortByNumberOfTrades, ASC}, make([]*DSEShare,0), false},
 		{"", args{make([]*DSEShare,0), SortByNumberOfTrades, DESC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByPriceChange, ASC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByPriceChange, DESC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByYCP, ASC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByYCP, DESC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByValue, ASC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByValue, DESC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByVolumeOfShare, ASC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByVolumeOfShare, DESC}, make([]*DSEShare,0), false},
+		{"", args{make([]*DSEShare,0), SortByPercentageChange, DESC}, nil, true},
 
 	}
 	for _, tt := range tests {

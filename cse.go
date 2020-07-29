@@ -2,9 +2,14 @@ package bdstockexchange
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"net/http"
 	"sort"
 	"strings"
+
+	"golang.org/x/net/html"
+	"golang.org/x/net/html/charset"
 
 	"github.com/antchfx/htmlquery"
 )
@@ -41,6 +46,58 @@ type Summary struct {
 	HistoricalSummaries []*market
 }
 
+// WeeklyReports holds the weekly reports for a Year
+type WeeklyReports struct {
+	Year    int
+	Reports []*report
+}
+
+type report struct {
+	Date          string
+	Title         string
+	ReportPDFLink string
+}
+
+type Company struct {
+	CompanyName string
+	TradingCode string
+}
+
+type CompanyListingByIndustry struct {
+	IndustryType string
+	List         []*Company
+}
+
+type CompanyListingByCategory struct {
+	Category string
+	List     []*Company
+}
+
+type PriceEarningRatios struct {
+	Date                   string
+	PriceEarningRatioArray []*PriceEarningRatio
+}
+
+// PriceEarningRatio holds the data for a price earning ratio in selected date
+type PriceEarningRatio struct {
+	SL            string
+	TradingCode   string
+	FinancialYear struct {
+		From string
+		To   string
+	}
+	EPSAsPerUpdatedUnAuditedAccounts struct {
+		Quarter1 float64
+		HalfYear float64
+		Quarter3 float64
+	}
+	AnnualizedEPS                     float64
+	EPSBasedOnLastAuditedAccounts     float64
+	ClosePrice                        float64
+	PERatioBasedOnAnnualizedEPS       float64
+	PERatioBasedOnLastAuditedAccounts float64
+}
+
 const (
 	slCSE = iota
 	stockCodeCSE
@@ -54,11 +111,6 @@ const (
 	volumeCSE
 )
 
-//NewCSE returns new CSE object
-func NewCSE() *CSE {
-	return new(CSE)
-}
-
 // CSEShare is a model for a single company's latest price data provided by the cse website
 type CSEShare struct {
 	SL          int
@@ -71,6 +123,11 @@ type CSEShare struct {
 	Trade       int64
 	ValueInMN   float64
 	Volume      int64
+}
+
+//NewCSE returns new CSE object
+func NewCSE() *CSE {
+	return new(CSE)
 }
 
 func getCSELatestPrices() ([]*CSEShare, error) {
@@ -319,4 +376,390 @@ func (c *CSE) GetMarketSummary() (*Summary, error) {
 	summary.HighestRecords = highestRecords
 	summary.HistoricalSummaries = historicalSummaries
 	return summary, nil
+}
+
+// GetAllWeeklyReports returns weekly reports pdf link for the input Year. the Year should be between current Year and 2018
+func (c *CSE) GetAllWeeklyReports(year int) (*WeeklyReports, error) {
+	data := fmt.Sprintf("Year=%d", year)
+	body := strings.NewReader(data)
+	req, err := http.NewRequest("POST", "https://www.cse.com.bd/market/weekly_report", body)
+	if err != nil {
+		// handle err
+	}
+	req.Header.Set("Authority", "www.cse.com.bd")
+	req.Header.Set("Cache-Control", "max-age=0")
+	req.Header.Set("Upgrade-Insecure-Requests", "1")
+	req.Header.Set("Origin", "https://www.cse.com.bd")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 6.0.1; Moto G (4)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Mobile Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	req.Header.Set("Sec-Fetch-Mode", "navigate")
+	req.Header.Set("Sec-Fetch-User", "?1")
+	req.Header.Set("Sec-Fetch-Dest", "document")
+	req.Header.Set("Referer", "https://www.cse.com.bd/market/weekly_report")
+	req.Header.Set("Accept-Language", "en-GB,en-US;q=0.9,en;q=0.8")
+	req.Header.Set("Cookie", "logins=281d8de2fe59ebd74a2fb76b0f75bcbf229bd7f1")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		// handle err
+	}
+	//defer resp.Body.Close()
+
+	r, err := charset.NewReader(resp.Body, resp.Header.Get("Content-Type"))
+
+	if err != nil {
+		// handle err
+	}
+
+	doc, err := html.Parse(r)
+
+	if err != nil {
+		// handle error
+	}
+
+	reports := make([]*report, 0)
+	weeklyReports := &WeeklyReports{
+		Year:    year,
+		Reports: nil,
+	}
+
+	availableYears := make([]int, 0)
+	list := htmlquery.Find(doc, `//*[@id="wrapper"]/div/div/div[1]/div/div[1]/div/div/form/div/div[2]/select`)
+	for _, v := range list {
+		option := htmlquery.Find(v, "option")
+		for _, v := range option {
+			if htmlquery.InnerText(v) == "" {
+				continue
+			} else {
+				availableYears = append(availableYears, toInt(htmlquery.InnerText(v)))
+			}
+		}
+	}
+
+	isValidYear := false
+
+	for _, v := range availableYears {
+		if v == year {
+			isValidYear = true
+			break
+		}
+	}
+
+	if isValidYear == false {
+		return nil, errNotAValidYear
+	}
+
+	list = htmlquery.Find(doc, `//*[@id="wrapper"]/div/div/div[1]/div/div[3]/div/div/div[2]/div`)
+
+	for _, v := range list {
+		peRatioTabsContent := htmlquery.Find(v, "div")
+		for _, v := range peRatioTabsContent {
+			if htmlquery.SelectAttr(v, "class") == "pe_ratio_tabs_cont" {
+				date := htmlquery.InnerText(htmlquery.FindOne(v, `//*[@id="pe_ratiocont_1"]`))
+				titleNode := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_2"]`)
+				title := htmlquery.InnerText(titleNode)
+				link := htmlquery.InnerText(htmlquery.FindOne(titleNode, "//a/@href"))
+
+				rep := &report{
+					Date:          date,
+					Title:         title,
+					ReportPDFLink: link,
+				}
+				reports = append(reports, rep)
+			}
+		}
+	}
+
+	weeklyReports.Reports = reports
+
+	return weeklyReports, nil
+}
+
+// GetAllListedCompanies returns all the companies listed in cse or error in case of any error
+func (c *CSE) GetAllListedCompanies() ([]*Company, error) {
+	doc, err := htmlquery.LoadURL("https://www.cse.com.bd/company/listedcompanies")
+	if err != nil {
+		return nil, err
+	}
+
+	companyListing := make([]*Company, 0)
+
+	list, err := htmlquery.QueryAll(doc, `//*[@id="top_content_1"]/div/div/div/div/div/div/div[2]`)
+	if err != nil {
+		return nil, err
+	}
+	for _, l := range list {
+		div := htmlquery.Find(l, "//div//ul")
+		for _, di := range div {
+			li := htmlquery.Find(di, "li")
+			for _, v := range li {
+				a := htmlquery.FindOne(v, "a")
+				companyName := strings.TrimSpace(htmlquery.InnerText(a))
+				companyTradingCode := strings.Trim(htmlquery.InnerText(htmlquery.FindOne(v, "//a/@href")), "https://www.cse.com.bd/company/companydetails/")
+
+				company := &Company{
+					CompanyName: companyName,
+					TradingCode: companyTradingCode,
+				}
+				companyListing = append(companyListing, company)
+			}
+
+		}
+	}
+
+	return companyListing, nil
+}
+
+// GetAllListedCompaniesByIndustry returns list of companies with their industry type or error in case of any error
+func (c *CSE) GetAllListedCompaniesByIndustry() ([]*CompanyListingByIndustry, error) {
+	doc, err := htmlquery.LoadURL("https://www.cse.com.bd/company/listedcompanies")
+	if err != nil {
+		return nil, err
+	}
+
+	companyListIndustry := make([]*CompanyListingByIndustry, 0)
+
+	list, err := htmlquery.QueryAll(doc, `//*[@id="top_content_2"]/div/div/div/div/div`)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, li := range list {
+		divs, err := htmlquery.QueryAll(li, "div")
+		//log.Println(htmlquery.InnerText(htmlquery.FindOne(divs, "//@id")))
+		if err != nil {
+			return nil, err
+		}
+		for _, div := range divs {
+			list := make([]*Company, 0)
+			category := htmlquery.FindOne(div, "//@id")
+
+			li := htmlquery.Find(div, "//ul//li")
+			for _, v := range li {
+				a := htmlquery.FindOne(v, "a")
+				companyName := strings.TrimSpace(htmlquery.InnerText(a))
+				companyTradingCode := strings.Trim(htmlquery.InnerText(htmlquery.FindOne(v, "//a/@href")), "https://www.cse.com.bd/company/companydetails/")
+
+				company := &Company{
+					CompanyName: companyName,
+					TradingCode: companyTradingCode,
+				}
+				list = append(list, company)
+			}
+			listByIndustry := &CompanyListingByIndustry{
+				IndustryType: htmlquery.InnerText(category),
+				List:         list,
+			}
+			companyListIndustry = append(companyListIndustry, listByIndustry)
+		}
+	}
+	return companyListIndustry, nil
+}
+
+// GetAllListedCompaniesByCategory returns the listing of the companies by their category or an error in case of any error
+func (c *CSE) GetAllListedCompaniesByCategory() ([]*CompanyListingByCategory, error) {
+	doc, err := htmlquery.LoadURL("https://www.cse.com.bd/company/listedcompanies")
+	if err != nil {
+		return nil, err
+	}
+
+	companyListByCategory := make([]*CompanyListingByCategory, 0)
+
+	list, err := htmlquery.QueryAll(doc, `//*[@id="top_content_3"]/div/div/div/div/div`)
+
+	if err != nil {
+		return nil, err
+	}
+
+	for _, li := range list {
+		divs, err := htmlquery.QueryAll(li, "div")
+		//log.Println(htmlquery.InnerText(htmlquery.FindOne(divs, "//@id")))
+		if err != nil {
+			return nil, err
+		}
+
+		for _, div := range divs {
+			list := make([]*Company, 0)
+			category := htmlquery.FindOne(div, "div")
+
+			li := htmlquery.Find(div, "//ul//li")
+			for _, v := range li {
+				a := htmlquery.FindOne(v, "a")
+				companyName := strings.TrimSpace(htmlquery.InnerText(a))
+				companyTradingCode := strings.Trim(htmlquery.InnerText(htmlquery.FindOne(v, "//a/@href")), "https://www.cse.com.bd/company/companydetails/")
+
+				company := &Company{
+					CompanyName: companyName,
+					TradingCode: companyTradingCode,
+				}
+				list = append(list, company)
+			}
+			listByCategory := &CompanyListingByCategory{
+				Category: strings.TrimSpace(htmlquery.InnerText(category)),
+				List:     list,
+			}
+			companyListByCategory = append(companyListByCategory, listByCategory)
+		}
+	}
+	return companyListByCategory, nil
+}
+
+// GetPriceEarningRatio returns the price earning ratio data for listed companies as per input date. It takes day, month and Year as input ex : (03, 07, 2020)
+// where 03 is the day and 07 is the month and 2020 is the Year. Don't forget to include 0 before single digit day or month
+func (c *CSE) GetPriceEarningRatio(day, month, year string) (*PriceEarningRatios, error) {
+	priceEarningRatios := &PriceEarningRatios{
+		Date:                   "",
+		PriceEarningRatioArray: nil,
+	}
+
+	priceEarningRatioArray := make([]*PriceEarningRatio, 0)
+
+	data := fmt.Sprintf("pe_date=%s-%s-%s", year, month, day)
+	data_body := strings.NewReader(data)
+	req, err := http.NewRequest("POST", "https://www.cse.com.bd/market/pe_ratio", data_body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Authority", "www.cse.com.bd")
+	req.Header.Set("Cache-Control", "max-age=0")
+	req.Header.Set("Upgrade-Insecure-Requests", "1")
+	req.Header.Set("Origin", "https://www.cse.com.bd")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.89 Mobile Safari/537.36")
+	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9")
+	req.Header.Set("Sec-Fetch-Site", "same-origin")
+	req.Header.Set("Sec-Fetch-Mode", "navigate")
+	req.Header.Set("Sec-Fetch-User", "?1")
+	req.Header.Set("Sec-Fetch-Dest", "document")
+	req.Header.Set("Referer", "https://www.cse.com.bd/market/pe_ratio")
+	req.Header.Set("Accept-Language", "en-GB,en-US;q=0.9,en;q=0.8")
+	req.Header.Set("Cookie", "logins=e879d1d3a477b3e43ddbb30e4d46ad4feddddfea")
+
+	resp, err := http.DefaultClient.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	//re, _ := ioutil.ReadAll(resp.Body)
+	//log.Println(string(re))
+
+	r, err := charset.NewReader(resp.Body, resp.Header.Get("Content-Type"))
+	if err != nil {
+		return nil, err
+	}
+
+	doc, err := html.Parse(r)
+	if err != nil {
+		return nil, err
+	}
+
+	list, err := htmlquery.QueryAll(doc, `//*[@id="wrapper"]/div/div/div[1]/div/div[3]/div/div/div/div`)
+	if err != nil {
+		return nil, err
+	}
+
+	var isDataFound bool
+
+	for _, v := range list {
+		tabsContents, err := htmlquery.QueryAll(v, "//div")
+		if err != nil {
+			return nil, err
+		}
+		isDataFound = false
+		for _, v := range tabsContents {
+			if htmlquery.SelectAttr(v, "class") == "pe_ratio_tabs_cont" {
+				isDataFound = true
+				pe_ratiocont_1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_1"]`)
+				pe_ratiocont_2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_2"]`)
+				pe_ratiocont_3_td1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_3"]/table/tbody/tr/td[1]`)
+				pe_ratiocont_3_td2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_3"]/table/tbody/tr/td[2]`)
+				//log.Println(htmlquery.InnerText(pe_ratiocont_3_td1), htmlquery.InnerText(pe_ratiocont_3_td2))
+				pe_ratiocont_4_td1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[1]`)
+				pe_ratiocont_4_td2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[2]`)
+				pe_ratiocont_4_td3 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[3]`)
+				pe_ratiocont_5 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_5"]`)
+				pe_ratiocont_6 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_6"]`)
+				pe_ratiocont_7 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_7"]`)
+				pe_ratiocont_8 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_8"]`)
+				pe_ratiocont_9 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_9"]`)
+
+				priceEarningRatio := &PriceEarningRatio{
+					SL:          strings.Replace(htmlquery.InnerText(pe_ratiocont_1), ".", "", -1),
+					TradingCode: htmlquery.InnerText(pe_ratiocont_2),
+					FinancialYear: struct {
+						From string
+						To   string
+					}{
+						From: htmlquery.InnerText(pe_ratiocont_3_td1),
+						To:   htmlquery.InnerText(pe_ratiocont_3_td2),
+					},
+					EPSAsPerUpdatedUnAuditedAccounts: struct {
+						Quarter1 float64
+						HalfYear float64
+						Quarter3 float64
+					}{
+						Quarter1: toFloat64(htmlquery.InnerText(pe_ratiocont_4_td1)),
+						HalfYear: toFloat64(htmlquery.InnerText(pe_ratiocont_4_td2)),
+						Quarter3: toFloat64(htmlquery.InnerText(pe_ratiocont_4_td3)),
+					},
+					AnnualizedEPS:                     toFloat64(htmlquery.InnerText(pe_ratiocont_5)),
+					EPSBasedOnLastAuditedAccounts:     toFloat64(htmlquery.InnerText(pe_ratiocont_6)),
+					ClosePrice:                        toFloat64(htmlquery.InnerText(pe_ratiocont_7)),
+					PERatioBasedOnAnnualizedEPS:       toFloat64(htmlquery.InnerText(pe_ratiocont_8)),
+					PERatioBasedOnLastAuditedAccounts: toFloat64(htmlquery.InnerText(pe_ratiocont_9)),
+				}
+
+				priceEarningRatioArray = append(priceEarningRatioArray, priceEarningRatio)
+
+			}
+		}
+
+	}
+	if !isDataFound{
+		return nil, errNoDataFound
+	}
+
+	priceEarningRatios.Date = data
+	priceEarningRatios.PriceEarningRatioArray = priceEarningRatioArray
+
+	return priceEarningRatios, nil
+}
+
+// CseMarketStatus holds the data for if market is open/close
+type CseMarketStatus struct {
+	IsOpen        bool
+}
+
+// GetMarketStatus returns the CseMarketStatus with is open/close
+func (d *CSE) GetMarketStatus() (*CseMarketStatus, error) {
+	doc, err := htmlquery.LoadURL("https://www.cse.com.bd/market/current_price")
+	if err != nil {
+		return nil, err
+	}
+	isOpenNode, err := htmlquery.Query(doc, `//*[@id="wrapper"]/div/header/div/div/div[2]/div[1]/div[1]/span`)
+	if err != nil {
+		return nil, err
+	}
+
+	isOpenText := htmlquery.InnerText(isOpenNode)
+
+	isOpen := false
+
+	if isOpenText == "Open" {
+		isOpen = true
+	}
+
+	cseMarketStatus := &CseMarketStatus{
+		IsOpen: isOpen,
+	}
+
+	log.Println(cseMarketStatus.IsOpen)
+
+	return cseMarketStatus, nil
 }
