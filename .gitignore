@@ -19,3 +19,4 @@ cmd/main.go
 cmd/
 .idea/*
 cmd/main.go
+o.md
