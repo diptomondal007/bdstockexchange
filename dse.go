@@ -3,12 +3,12 @@ package bdstockexchange
 import (
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"sort"
 	"strings"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/antchfx/htmlquery"
 )
 
 // DSE is a struct to access dse related methods
@@ -57,15 +57,14 @@ func getDSELatestPrices(url string) ([]*DSEShare, error) {
 	}
 	res, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	defer res.Body.Close()
 	if res.StatusCode != 200 {
-		log.Fatalf("status code error: %d %s", res.StatusCode, res.Status)
+		return nil, fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 	doc.Find("table tr").Each(func(i int, selection *goquery.Selection) {
@@ -252,4 +251,133 @@ func sortDse(arr []*DSEShare, by sortBy, order sortOrder) ([]*DSEShare, error) {
 	default:
 		return nil, errors.New("sorting with the given sort by param is not possible. try another one")
 	}
+}
+
+// LatestPricesWithPercentage ...
+type LatestPricesWithPercentage struct {
+	ID               int     `json:"id"`
+	TradingCode      string  `json:"trading_code"`
+	LTP              float64 `json:"ltp"`
+	High             float64 `json:"high"`
+	Low              float64 `json:"low"`
+	CloseP           float64 `json:"close_p"`
+	YCP              float64 `json:"ycp"`
+	PercentageChange float64 `json:"percentage_change"`
+	Trade            int64   `json:"trade"`
+	ValueInMN        float64 `json:"value"`
+	Volume           int64   `json:"volume"`
+}
+
+// GetLatestPricesSortedByPercentageChange ...
+func (d *DSE) GetLatestPricesSortedByPercentageChange() ([]*LatestPricesWithPercentage, error) {
+	latestPricesWithPercentage := make([]*LatestPricesWithPercentage, 0)
+	doc, err := htmlquery.LoadURL("https://www.dsebd.org/latest_share_price_all_by_change.php")
+	if err != nil {
+		return nil, err
+	}
+
+	tr, err := htmlquery.QueryAll(doc, "//tr")
+	if err != nil {
+		return nil, err
+	}
+	for i, t := range tr {
+		if i == 0 {
+			continue
+		}
+		td, err := htmlquery.QueryAll(t, "//td")
+		if err != nil {
+			return nil, err
+		}
+		s := &LatestPricesWithPercentage{}
+		for index, v := range td {
+			switch index {
+			case 0:
+				s.ID = toInt(htmlquery.InnerText(v))
+				break
+			case 1:
+				s.TradingCode = strings.TrimSpace(htmlquery.InnerText(v))
+				break
+			case 2:
+				s.LTP = toFloat64(htmlquery.InnerText(v))
+				break
+			case 3:
+				s.High = toFloat64(htmlquery.InnerText(v))
+				break
+			case 4:
+				s.Low = toFloat64(htmlquery.InnerText(v))
+				break
+			case 5:
+				s.CloseP = toFloat64(htmlquery.InnerText(v))
+				break
+			case 6:
+				s.YCP = toFloat64(htmlquery.InnerText(v))
+				break
+			case 7:
+				s.PercentageChange = toFloat64(htmlquery.InnerText(v))
+				break
+			case 8:
+				s.Trade = toInt64(htmlquery.InnerText(v))
+				break
+			case 9:
+				s.ValueInMN = toFloat64(htmlquery.InnerText(v))
+				break
+			case 10:
+				s.Volume = toInt64(htmlquery.InnerText(v))
+				break
+			}
+		}
+		latestPricesWithPercentage = append(latestPricesWithPercentage, s)
+	}
+	return latestPricesWithPercentage, nil
+}
+
+// DseMarketStatus holds the data for if market is open/close and when was last updated
+type DseMarketStatus struct {
+	IsOpen        bool
+	LastUpdatedOn struct {
+		Date string
+		Time string
+	}
+}
+
+// GetMarketStatus returns the DseMarketStatus with is open/close and last market update date time
+func (d *DSE) GetMarketStatus() (*DseMarketStatus, error) {
+	doc, err := htmlquery.LoadURL("https://www.dsebd.org/")
+	if err != nil {
+		return nil, err
+	}
+	isOpenNode, err := htmlquery.Query(doc, `/html/body/div/div/div/header/div[1]/span[3]/span/b`)
+	if err != nil {
+		return nil, err
+	}
+
+	isOpenText := htmlquery.InnerText(isOpenNode)
+
+	isOpen := false
+
+	if isOpenText == "Open" {
+		isOpen = true
+	}
+
+	dateTimeNode, err := htmlquery.Query(doc, `/html/body/div/div/div/div[1]/div[1]/h2`)
+	if err != nil {
+		return nil, err
+	}
+
+	dateTimeText := htmlquery.InnerText(dateTimeNode)
+
+	splitDateTime := strings.Split(dateTimeText, "Last update on ")[1]
+	dateTime := strings.Split(splitDateTime, " at ")
+	date := dateTime[0]
+	time := dateTime[1]
+
+	dseMarketStatus := &DseMarketStatus{
+		IsOpen: isOpen,
+		LastUpdatedOn: struct {
+			Date string
+			Time string
+		}{Date: date, Time: time},
+	}
+
+	return dseMarketStatus, nil
 }

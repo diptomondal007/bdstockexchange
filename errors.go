@@ -7,4 +7,5 @@ var (
 	errInvalidGroupName = errors.New("group name is invalid. enter a valid group name. ex : A, B, G, N, Z")
 	errErrorFetchingUrl = errors.New("failed to fetch data. server offline")
 	errNoDataFound      = errors.New("no data found")
+	errNotAValidYear    = errors.New("data not available for this Year")
 )
