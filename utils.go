@@ -22,10 +22,10 @@ func normalizeAmerican(old string) string {
 // toFloat64 returns the float64 cleaning the input string
 func toFloat64(text string) float64 {
 	if text == "--" {
-		text = strings.Replace(text, "--", "nan", -1)
+		text = strings.Replace(text, "--", "0", -1)
 	}
-	if text == "N/A"{
-		text = strings.Replace(text, "N/A", "nan", -1)
+	if text == "N/A" {
+		text = strings.Replace(text, "N/A", "0", -1)
 	}
 	val, err := strconv.ParseFloat(normalizeAmerican(text), 64)
 	if err != nil {
@@ -36,8 +36,8 @@ func toFloat64(text string) float64 {
 
 // toInt64 returns the int64 cleaning the input string
 func toInt64(text string) int64 {
-	if strings.Contains(text, " "){
-		text = strings.Replace(text, " ","", -1)
+	if strings.Contains(text, " ") {
+		text = strings.Replace(text, " ", "", -1)
 	}
 	val, err := strconv.ParseInt(normalizeAmerican(text), 10, 64)
 	if err != nil {
