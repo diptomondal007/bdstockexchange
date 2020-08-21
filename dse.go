@@ -3,11 +3,9 @@ package bdstockexchange
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"sort"
 	"strings"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/antchfx/htmlquery"
 )
 
@@ -53,65 +51,66 @@ func getDSELatestPrices(url string) ([]*DSEShare, error) {
 	latestShares := make([]*DSEShare, 0)
 	// Request the HTML page.
 	if url == "" {
-		url = "https://www.dsebd.org/latest_share_price_all.php"
+		url = "https://www.dsebd.org/latest_share_price_scroll_l.php"
 	}
-	res, err := http.Get(url)
+	doc, err := htmlquery.LoadURL("https://www.dsebd.org/latest_share_price_scroll_l.php")
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
-	if res.StatusCode != 200 {
-		return nil, fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
-	}
-	doc, err := goquery.NewDocumentFromReader(res.Body)
-	if err != nil {
-		return nil, err
-	}
-	doc.Find("table tr").Each(func(i int, selection *goquery.Selection) {
-		//log.Println(selection.Find("td").Text())
-		if i == 0 {
-			return
+	tab, _ := htmlquery.QueryAll(doc, `/html/body/div[2]/section/div/div[3]/div[1]/div[2]/div[1]`)
+	for _, v := range tab {
+		tbody, err := htmlquery.QueryAll(v, "//tbody")
+		if err != nil {
+			return nil, err
 		}
-		s := &DSEShare{}
-		selection.Find("td").Each(func(i int, selection *goquery.Selection) {
-			switch i {
-			case idDSE:
-				s.ID = toInt(selection.Text())
-				break
-			case tradingCodeDSE:
-				s.TradingCode = strings.TrimSpace(selection.Text())
-				break
-			case ltpDSE:
-				s.LTP = toFloat64(selection.Text())
-				break
-			case highDSE:
-				s.High = toFloat64(selection.Text())
-				break
-			case lowDSE:
-				s.Low = toFloat64(selection.Text())
-				break
-			case closePriceDSE:
-				s.CloseP = toFloat64(selection.Text())
-				break
-			case ycpDSE:
-				s.YCP = toFloat64(selection.Text())
-				break
-			case changeDSE:
-				s.Change = toFloat64(selection.Text())
-				break
-			case tradeDSE:
-				s.Trade = toInt64(selection.Text())
-				break
-			case valueDSE:
-				s.ValueInMN = toFloat64(selection.Text())
-				break
-			case volumeDSE:
-				s.Volume = toInt64(selection.Text())
-				break
+		for _, v := range tbody {
+			td, err := htmlquery.QueryAll(v, "//tr //td")
+			if err != nil {
+				return nil, err
 			}
-		})
-		latestShares = append(latestShares, s)
-	})
+			s := &DSEShare{}
+			for index, v := range td {
+				switch index {
+				case idDSE:
+					s.ID = toInt(htmlquery.InnerText(v))
+					break
+				case tradingCodeDSE:
+					s.TradingCode = strings.TrimSpace(htmlquery.InnerText(v))
+					break
+				case ltpDSE:
+					s.LTP = toFloat64(htmlquery.InnerText(v))
+					break
+				case highDSE:
+					s.High = toFloat64(htmlquery.InnerText(v))
+					break
+				case lowDSE:
+					s.Low = toFloat64(htmlquery.InnerText(v))
+					break
+				case closePriceDSE:
+					s.CloseP = toFloat64(htmlquery.InnerText(v))
+					break
+				case ycpDSE:
+					s.YCP = toFloat64(htmlquery.InnerText(v))
+					break
+				case changeDSE:
+					s.Change = toFloat64(htmlquery.InnerText(v))
+					break
+				case tradeDSE:
+					s.Trade = toInt64(htmlquery.InnerText(v))
+					break
+				case valueDSE:
+					s.ValueInMN = toFloat64(htmlquery.InnerText(v))
+					break
+				case volumeDSE:
+					s.Volume = toInt64(htmlquery.InnerText(v))
+					break
+				}
+
+			}
+
+			latestShares = append(latestShares, s)
+		}
+	}
 	return latestShares, nil
 }
 
@@ -139,7 +138,7 @@ func (d *DSE) GetLatestPricesByCategory(categoryName string, by sortBy, order so
 // It takes by which field the array should be sorted ex: SortByTradingCode and sort order ex: ASC
 // It will return an error for if user tries to sort with a non existing file in the DSEShare model or invalid category name or invalid sort order
 func (d *DSE) GetLatestPrices(by sortBy, order sortOrder) ([]*DSEShare, error) {
-	arr, err := getDSELatestPrices("https://www.dsebd.org/latest_share_price_all.php")
+	arr, err := getDSELatestPrices("https://www.dsebd.org/latest_share_price_scroll_l.php")
 	if err != nil {
 		return nil, err
 	}
@@ -359,7 +358,7 @@ func (d *DSE) GetMarketStatus() (*DseMarketStatus, error) {
 		isOpen = true
 	}
 
-	dateTimeNode, err := htmlquery.Query(doc, `/html/body/div/div/div/div[1]/div[1]/h2`)
+	dateTimeNode, err := htmlquery.Query(doc, `/html/body/div[2]/section/div/div[1]/div/h2`)
 	if err != nil {
 		return nil, err
 	}
