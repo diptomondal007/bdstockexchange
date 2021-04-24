@@ -407,6 +407,27 @@ func main(){
 }
 ```
 
+#### GetMarketSummary
+```go
+package main
+
+import (
+	"log"
+
+	"github.com/diptomondal007/bdstockexchange"
+)
+
+func main() {
+	dse := bdstockexchange.NewDSE()
+	ms, err := dse.GetMarketSummary()
+	if err != nil {
+		log.Println(err)
+	}
+
+	log.Println(ms.DseX.DSEXIndex)
+}
+```
+
 ## License
 
 bdstockexchange is released under the Apache 2.0 license. See [LICENSE.txt](https://github.com/diptomondal007/bdstockexchange/blob/master/LICENSE)

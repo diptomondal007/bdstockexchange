@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/antchfx/htmlquery"
@@ -379,4 +380,245 @@ func (d *DSE) GetMarketStatus() (*DseMarketStatus, error) {
 	}
 
 	return dseMarketStatus, nil
+}
+
+// MarketSummary holds the data for market summary like DSEX index details and total trades and so on
+type MarketSummary struct {
+	LastUpdatedOn struct {
+		Date string `json:"date"`
+		Time string `json:"time"`
+	} `json:"last_updated_on"`
+
+	DseX struct {
+		DSEXIndex                 float64 `json:"dsex_index"`
+		DSEXIndexChange           float64 `json:"dsex_index_change"`
+		DSEXIndexChangePercentage float64 `json:"dsex_index_change_percentage"`
+	} `json:"dsex"`
+
+	Ds30 struct {
+		DS30Index                 float64 `json:"ds30_index"`
+		DS30IndexChange           float64 `json:"ds30_index_change"`
+		DS30IndexChangePercentage float64 `json:"ds30_index_change_percentage"`
+	} `json:"ds30"`
+
+	DseS struct {
+		DSESIndex                 float64 `json:"dses_index"`
+		DSESIndexChange           float64 `json:"dses_index_change"`
+		DSESIndexChangePercentage float64 `json:"dses_index_change_percentage"`
+	} `json:"dses"`
+
+	TotalTrade     int64 `json:""`
+	TotalValueInMN float64 `json:""`
+	TotalVolume    int64   `json:""`
+
+	IssuesAdvanced  int32 `json:""`
+	IssuesDeclined  int32 `json:""`
+	IssuesUnchanged int32 `json:""`
+}
+
+// GetMarketSummary returns the last updated market summary data
+func (d *DSE) GetMarketSummary() (*MarketSummary, error) {
+	doc, err := htmlquery.LoadURL("https://www.dsebd.org/")
+	if err != nil {
+		return nil, err
+	}
+
+	dateTimeNode, err := htmlquery.Query(doc, `/html/body/div[2]/section/div/div[1]/div/h2`)
+	if err != nil {
+		return nil, err
+	}
+
+	dateTimeText := htmlquery.InnerText(dateTimeNode)
+
+	splitDateTime := strings.Split(dateTimeText, "Last update on ")[1]
+	dateTime := strings.Split(splitDateTime, " at ")
+	date := dateTime[0]
+	time := dateTime[1]
+
+	dseMarketSummary := &MarketSummary{}
+	dseMarketSummary.LastUpdatedOn.Date = date
+	dseMarketSummary.LastUpdatedOn.Time = time
+
+	//var aggErr error
+	node, err := htmlquery.Query(doc, `/html/body/div[2]/section/div/div[1]/div/div[1]`)
+	if err != nil {
+		return nil, err
+	}
+	divNode, err := htmlquery.QueryAll(node, "//div")
+	if err != nil {
+		return nil, err
+	}
+
+	for index, v := range divNode {
+		switch index {
+		case 2:
+			dsexIndexString := htmlquery.InnerText(v)
+			dsexIndex, err := strconv.ParseFloat(strings.TrimSpace(dsexIndexString), 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.DseX.DSEXIndex = dsexIndex
+		case 3:
+			dsexIndexChangeString := htmlquery.InnerText(v)
+			dsexIndexChange, err := strconv.ParseFloat(strings.TrimSpace(dsexIndexChangeString), 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.DseX.DSEXIndexChange = dsexIndexChange
+		case 4:
+			dsexIndexChangePString := htmlquery.InnerText(v)
+			dsexIndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(dsexIndexChangePString,"%","",-1)) , 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.DseX.DSEXIndexChangePercentage = dsexIndexChangeP
+		}
+	}
+
+	// DSES
+	node, err = htmlquery.Query(doc, `/html/body/div[2]/section/div/div[1]/div/div[2]`)
+	if err != nil {
+		return nil, err
+	}
+	divNode, err = htmlquery.QueryAll(node, "//div")
+	if err != nil {
+		return nil, err
+	}
+
+	for index, v := range divNode {
+		switch index {
+		case 2:
+			dsesIndexString := htmlquery.InnerText(v)
+			dsesIndex, err := strconv.ParseFloat(strings.TrimSpace(dsesIndexString), 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.DseS.DSESIndex = dsesIndex
+		case 3:
+			dsesIndexChangeString := htmlquery.InnerText(v)
+			dsesIndexChange, err := strconv.ParseFloat(strings.TrimSpace(dsesIndexChangeString), 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.DseS.DSESIndexChange = dsesIndexChange
+		case 4:
+			dsesIndexChangePString := htmlquery.InnerText(v)
+			dsesIndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(dsesIndexChangePString,"%","",-1)) , 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.DseS.DSESIndexChangePercentage = dsesIndexChangeP
+		}
+	}
+
+
+	// DS30
+	node, err = htmlquery.Query(doc, `/html/body/div[2]/section/div/div[1]/div/div[3]`)
+	if err != nil {
+		return nil, err
+	}
+	divNode, err = htmlquery.QueryAll(node, "//div")
+	if err != nil {
+		return nil, err
+	}
+
+	for index, v := range divNode {
+		switch index {
+		case 2:
+			ds30IndexString := htmlquery.InnerText(v)
+			ds30Index, err := strconv.ParseFloat(strings.TrimSpace(ds30IndexString), 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.Ds30.DS30Index = ds30Index
+		case 3:
+			ds30IndexChangeString := htmlquery.InnerText(v)
+			ds30IndexChange, err := strconv.ParseFloat(strings.TrimSpace(ds30IndexChangeString), 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.Ds30.DS30IndexChange = ds30IndexChange
+		case 4:
+			ds30IndexChangePString := htmlquery.InnerText(v)
+			ds30IndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(ds30IndexChangePString,"%","",-1)) , 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.Ds30.DS30IndexChangePercentage = ds30IndexChangeP
+		}
+	}
+
+	// Total Trade, Volumes, Value
+	node, err = htmlquery.Query(doc, `/html/body/div[2]/section/div/div[1]/div/div[5]`)
+	if err != nil {
+		return nil, err
+	}
+	divNode, err = htmlquery.QueryAll(node, "//div")
+	if err != nil {
+		return nil, err
+	}
+
+	for index, v := range divNode {
+		switch index {
+		case 1:
+			totalTradeString := htmlquery.InnerText(v)
+			totalTrade, err := strconv.ParseInt(strings.TrimSpace(totalTradeString), 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.TotalTrade = totalTrade
+		case 2:
+			totalVolumeString := htmlquery.InnerText(v)
+			totalVolume, err := strconv.ParseInt(strings.TrimSpace(totalVolumeString), 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.TotalVolume = totalVolume
+		case 3:
+			totalValueString := htmlquery.InnerText(v)
+			totalValue, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(totalValueString,"%","",-1)) , 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.Ds30.DS30IndexChangePercentage = totalValue
+		}
+	}
+
+	// Total issues
+	node, err = htmlquery.Query(doc, `/html/body/div[2]/section/div/div[1]/div/div[7]`)
+	if err != nil {
+		return nil, err
+	}
+	divNode, err = htmlquery.QueryAll(node, "//div")
+	if err != nil {
+		return nil, err
+	}
+
+	for index, v := range divNode {
+		switch index {
+		case 1:
+			issuesAdvancedString := htmlquery.InnerText(v)
+			issuesAdvanced, err := strconv.ParseInt(strings.TrimSpace(issuesAdvancedString), 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.IssuesAdvanced = int32(issuesAdvanced)
+		case 2:
+			issuesDeclinedString := htmlquery.InnerText(v)
+			issuesDeclined, err := strconv.ParseInt(strings.TrimSpace(issuesDeclinedString), 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.IssuesDeclined = int32(issuesDeclined)
+		case 3:
+			issuesUnchangedString := htmlquery.InnerText(v)
+			issuesUnchanged, err := strconv.ParseInt(strings.TrimSpace(strings.Replace(issuesUnchangedString,"%","",-1)), 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			dseMarketSummary.IssuesUnchanged = int32(issuesUnchanged)
+		}
+	}
+
+	return dseMarketSummary, nil
 }
