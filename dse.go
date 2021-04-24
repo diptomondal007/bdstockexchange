@@ -54,7 +54,7 @@ func getDSELatestPrices(url string) ([]*DSEShare, error) {
 	if url == "" {
 		url = "https://www.dsebd.org/latest_share_price_scroll_l.php"
 	}
-	doc, err := htmlquery.LoadURL("https://www.dsebd.org/latest_share_price_scroll_l.php")
+	doc, err := htmlquery.LoadURL(url)
 	if err != nil {
 		return nil, err
 	}
@@ -407,7 +407,7 @@ type MarketSummary struct {
 		DSESIndexChangePercentage float64 `json:"dses_index_change_percentage"`
 	} `json:"dses"`
 
-	TotalTrade     int64 `json:""`
+	TotalTrade     int64   `json:""`
 	TotalValueInMN float64 `json:""`
 	TotalVolume    int64   `json:""`
 
@@ -467,7 +467,7 @@ func (d *DSE) GetMarketSummary() (*MarketSummary, error) {
 			dseMarketSummary.DseX.DSEXIndexChange = dsexIndexChange
 		case 4:
 			dsexIndexChangePString := htmlquery.InnerText(v)
-			dsexIndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(dsexIndexChangePString,"%","",-1)) , 64)
+			dsexIndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(dsexIndexChangePString, "%", "", -1)), 64)
 			if err != nil {
 				return nil, err
 			}
@@ -503,14 +503,13 @@ func (d *DSE) GetMarketSummary() (*MarketSummary, error) {
 			dseMarketSummary.DseS.DSESIndexChange = dsesIndexChange
 		case 4:
 			dsesIndexChangePString := htmlquery.InnerText(v)
-			dsesIndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(dsesIndexChangePString,"%","",-1)) , 64)
+			dsesIndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(dsesIndexChangePString, "%", "", -1)), 64)
 			if err != nil {
 				return nil, err
 			}
 			dseMarketSummary.DseS.DSESIndexChangePercentage = dsesIndexChangeP
 		}
 	}
-
 
 	// DS30
 	node, err = htmlquery.Query(doc, `/html/body/div[2]/section/div/div[1]/div/div[3]`)
@@ -540,7 +539,7 @@ func (d *DSE) GetMarketSummary() (*MarketSummary, error) {
 			dseMarketSummary.Ds30.DS30IndexChange = ds30IndexChange
 		case 4:
 			ds30IndexChangePString := htmlquery.InnerText(v)
-			ds30IndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(ds30IndexChangePString,"%","",-1)) , 64)
+			ds30IndexChangeP, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(ds30IndexChangePString, "%", "", -1)), 64)
 			if err != nil {
 				return nil, err
 			}
@@ -576,7 +575,7 @@ func (d *DSE) GetMarketSummary() (*MarketSummary, error) {
 			dseMarketSummary.TotalVolume = totalVolume
 		case 3:
 			totalValueString := htmlquery.InnerText(v)
-			totalValue, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(totalValueString,"%","",-1)) , 64)
+			totalValue, err := strconv.ParseFloat(strings.TrimSpace(strings.Replace(totalValueString, "%", "", -1)), 64)
 			if err != nil {
 				return nil, err
 			}
@@ -612,7 +611,7 @@ func (d *DSE) GetMarketSummary() (*MarketSummary, error) {
 			dseMarketSummary.IssuesDeclined = int32(issuesDeclined)
 		case 3:
 			issuesUnchangedString := htmlquery.InnerText(v)
-			issuesUnchanged, err := strconv.ParseInt(strings.TrimSpace(strings.Replace(issuesUnchangedString,"%","",-1)), 10, 64)
+			issuesUnchanged, err := strconv.ParseInt(strings.TrimSpace(strings.Replace(issuesUnchangedString, "%", "", -1)), 10, 64)
 			if err != nil {
 				return nil, err
 			}

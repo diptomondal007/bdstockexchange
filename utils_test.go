@@ -14,8 +14,8 @@ func Test_isValidCategoryName(t *testing.T) {
 		want bool
 	}{
 		// TODO: Add test cases.
-		{"",args{categoryName:"A"},true},
-		{"",args{categoryName:"Abaa"},false},
+		{"", args{categoryName: "A"}, true},
+		{"", args{categoryName: "Abaa"}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -36,8 +36,8 @@ func Test_normalizeAmerican(t *testing.T) {
 		want string
 	}{
 		// TODO: Add test cases.
-		{"",args{old:"20,000.000"},"20000.000"},
-		{"",args{old:"20,120"},"20120"},
+		{"", args{old: "20,000.000"}, "20000.000"},
+		{"", args{old: "20,120"}, "20120"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -58,8 +58,8 @@ func Test_toFloat64(t *testing.T) {
 		want float64
 	}{
 		// TODO: Add test cases.
-		{"",args{text:"20,000.78"},20000.78},
-		{"",args{text:"50.07"},50.07},
+		{"", args{text: "20,000.78"}, 20000.78},
+		{"", args{text: "50.07"}, 50.07},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -80,8 +80,8 @@ func Test_toInt64(t *testing.T) {
 		want int64
 	}{
 		// TODO: Add test cases.
-		{"",args{text:"50,000"},50000},
-		{"",args{text:"40,000"},40000},
+		{"", args{text: "50,000"}, 50000},
+		{"", args{text: "40,000"}, 40000},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -102,8 +102,8 @@ func Test_toInt(t *testing.T) {
 		want int
 	}{
 		// TODO: Add test cases.
-		{"",args{text:"1"},1},
-		{"",args{text:"2"},2},
+		{"", args{text: "1"}, 1},
+		{"", args{text: "2"}, 2},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -11,7 +11,7 @@ func TestNewCSE(t *testing.T) {
 		want *CSE
 	}{
 		// TODO: Add test cases.
-		{"new",new(CSE)},
+		{"new", new(CSE)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -29,7 +29,7 @@ func Test_getCSELatestPrices(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{"", make([]*CSEShare,329), false},
+		{"", make([]*CSEShare, 329), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -58,7 +58,7 @@ func TestCSE_GetLatestPrices(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{"", NewCSE() ,args{SortByHighPrice, ASC}, make([]*CSEShare,329), false},
+		{"", NewCSE(), args{SortByHighPrice, ASC}, make([]*CSEShare, 329), false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -88,23 +88,23 @@ func Test_sortCse(t *testing.T) {
 		wantErr bool
 	}{
 		// TODO: Add test cases.
-		{"", args{make([]*CSEShare,0), SortByTradingCode, ASC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByTradingCode, DESC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByHighPrice, ASC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByHighPrice, DESC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByLowPrice, ASC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByLowPrice, DESC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByLTP, ASC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByLTP, DESC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByNumberOfTrades, ASC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByNumberOfTrades, DESC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByYCP, ASC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByYCP, DESC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByValue, ASC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByValue, DESC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByVolumeOfShare, ASC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByVolumeOfShare, DESC}, make([]*CSEShare,0), false},
-		{"", args{make([]*CSEShare,0), SortByPercentageChange, DESC}, nil, true},
+		{"", args{make([]*CSEShare, 0), SortByTradingCode, ASC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByTradingCode, DESC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByHighPrice, ASC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByHighPrice, DESC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByLowPrice, ASC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByLowPrice, DESC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByLTP, ASC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByLTP, DESC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByNumberOfTrades, ASC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByNumberOfTrades, DESC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByYCP, ASC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByYCP, DESC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByValue, ASC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByValue, DESC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByVolumeOfShare, ASC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByVolumeOfShare, DESC}, make([]*CSEShare, 0), false},
+		{"", args{make([]*CSEShare, 0), SortByPercentageChange, DESC}, nil, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

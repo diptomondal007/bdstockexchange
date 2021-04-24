@@ -58,21 +58,25 @@ type report struct {
 	ReportPDFLink string
 }
 
+// Company ...
 type Company struct {
 	CompanyName string
 	TradingCode string
 }
 
+// CompanyListingByIndustry ...
 type CompanyListingByIndustry struct {
 	IndustryType string
 	List         []*Company
 }
 
+// CompanyListingByCategory ...
 type CompanyListingByCategory struct {
 	Category string
 	List     []*Company
 }
 
+// PriceEarningRatios ...
 type PriceEarningRatios struct {
 	Date                   string
 	PriceEarningRatioArray []*PriceEarningRatio
@@ -617,8 +621,8 @@ func (c *CSE) GetPriceEarningRatio(day, month, year string) (*PriceEarningRatios
 	priceEarningRatioArray := make([]*PriceEarningRatio, 0)
 
 	data := fmt.Sprintf("pe_date=%s-%s-%s", year, month, day)
-	data_body := strings.NewReader(data)
-	req, err := http.NewRequest("POST", "https://www.cse.com.bd/market/pe_ratio", data_body)
+	dataBody := strings.NewReader(data)
+	req, err := http.NewRequest("POST", "https://www.cse.com.bd/market/pe_ratio", dataBody)
 	if err != nil {
 		return nil, err
 	}
@@ -675,44 +679,44 @@ func (c *CSE) GetPriceEarningRatio(day, month, year string) (*PriceEarningRatios
 		for _, v := range tabsContents {
 			if htmlquery.SelectAttr(v, "class") == "pe_ratio_tabs_cont" {
 				isDataFound = true
-				pe_ratiocont_1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_1"]`)
-				pe_ratiocont_2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_2"]`)
-				pe_ratiocont_3_td1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_3"]/table/tbody/tr/td[1]`)
-				pe_ratiocont_3_td2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_3"]/table/tbody/tr/td[2]`)
+				peRatiocont1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_1"]`)
+				peRatiocont2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_2"]`)
+				peRatiocont3Td1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_3"]/table/tbody/tr/td[1]`)
+				peRatiocont3Td2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_3"]/table/tbody/tr/td[2]`)
 				//log.Println(htmlquery.InnerText(pe_ratiocont_3_td1), htmlquery.InnerText(pe_ratiocont_3_td2))
-				pe_ratiocont_4_td1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[1]`)
-				pe_ratiocont_4_td2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[2]`)
-				pe_ratiocont_4_td3 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[3]`)
-				pe_ratiocont_5 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_5"]`)
-				pe_ratiocont_6 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_6"]`)
-				pe_ratiocont_7 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_7"]`)
-				pe_ratiocont_8 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_8"]`)
-				pe_ratiocont_9 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_9"]`)
+				peRatiocont4Rd1 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[1]`)
+				peRatiocont4Td2 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[2]`)
+				peRatiocont4Td3 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_4"]/table/tbody/tr/td[3]`)
+				peRatiocont5 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_5"]`)
+				peRatiocont6 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_6"]`)
+				peRatiocont7 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_7"]`)
+				peRatiocont8 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_8"]`)
+				peRatiocont9 := htmlquery.FindOne(v, `//*[@id="pe_ratiocont_9"]`)
 
 				priceEarningRatio := &PriceEarningRatio{
-					SL:          strings.Replace(htmlquery.InnerText(pe_ratiocont_1), ".", "", -1),
-					TradingCode: htmlquery.InnerText(pe_ratiocont_2),
+					SL:          strings.Replace(htmlquery.InnerText(peRatiocont1), ".", "", -1),
+					TradingCode: htmlquery.InnerText(peRatiocont2),
 					FinancialYear: struct {
 						From string
 						To   string
 					}{
-						From: htmlquery.InnerText(pe_ratiocont_3_td1),
-						To:   htmlquery.InnerText(pe_ratiocont_3_td2),
+						From: htmlquery.InnerText(peRatiocont3Td1),
+						To:   htmlquery.InnerText(peRatiocont3Td2),
 					},
 					EPSAsPerUpdatedUnAuditedAccounts: struct {
 						Quarter1 float64
 						HalfYear float64
 						Quarter3 float64
 					}{
-						Quarter1: toFloat64(htmlquery.InnerText(pe_ratiocont_4_td1)),
-						HalfYear: toFloat64(htmlquery.InnerText(pe_ratiocont_4_td2)),
-						Quarter3: toFloat64(htmlquery.InnerText(pe_ratiocont_4_td3)),
+						Quarter1: toFloat64(htmlquery.InnerText(peRatiocont4Rd1)),
+						HalfYear: toFloat64(htmlquery.InnerText(peRatiocont4Td2)),
+						Quarter3: toFloat64(htmlquery.InnerText(peRatiocont4Td3)),
 					},
-					AnnualizedEPS:                     toFloat64(htmlquery.InnerText(pe_ratiocont_5)),
-					EPSBasedOnLastAuditedAccounts:     toFloat64(htmlquery.InnerText(pe_ratiocont_6)),
-					ClosePrice:                        toFloat64(htmlquery.InnerText(pe_ratiocont_7)),
-					PERatioBasedOnAnnualizedEPS:       toFloat64(htmlquery.InnerText(pe_ratiocont_8)),
-					PERatioBasedOnLastAuditedAccounts: toFloat64(htmlquery.InnerText(pe_ratiocont_9)),
+					AnnualizedEPS:                     toFloat64(htmlquery.InnerText(peRatiocont5)),
+					EPSBasedOnLastAuditedAccounts:     toFloat64(htmlquery.InnerText(peRatiocont6)),
+					ClosePrice:                        toFloat64(htmlquery.InnerText(peRatiocont7)),
+					PERatioBasedOnAnnualizedEPS:       toFloat64(htmlquery.InnerText(peRatiocont8)),
+					PERatioBasedOnLastAuditedAccounts: toFloat64(htmlquery.InnerText(peRatiocont9)),
 				}
 
 				priceEarningRatioArray = append(priceEarningRatioArray, priceEarningRatio)
@@ -721,7 +725,7 @@ func (c *CSE) GetPriceEarningRatio(day, month, year string) (*PriceEarningRatios
 		}
 
 	}
-	if !isDataFound{
+	if !isDataFound {
 		return nil, errNoDataFound
 	}
 
@@ -733,11 +737,11 @@ func (c *CSE) GetPriceEarningRatio(day, month, year string) (*PriceEarningRatios
 
 // CseMarketStatus holds the data for if market is open/close
 type CseMarketStatus struct {
-	IsOpen        bool
+	IsOpen bool
 }
 
 // GetMarketStatus returns the CseMarketStatus with is open/close
-func (d *CSE) GetMarketStatus() (*CseMarketStatus, error) {
+func (c *CSE) GetMarketStatus() (*CseMarketStatus, error) {
 	doc, err := htmlquery.LoadURL("https://www.cse.com.bd/market/current_price")
 	if err != nil {
 		return nil, err
